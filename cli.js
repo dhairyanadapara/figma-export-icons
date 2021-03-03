@@ -45,6 +45,9 @@ function getConfig () {
     const configFile = path.resolve(argv.config || defaults.configFileName)
     if (fs.existsSync(configFile)) {
       config = JSON.parse(fs.readFileSync(configFile, 'utf-8'))
+      delete config.page;
+      delete config.frame;
+      delete config.format;
       const missingConfig = promptsList.filter((q) => !config[q.name])
       if (missingConfig.length > 0) getPromptData(missingConfig).then(() => resolve())
       else resolve()
@@ -75,61 +78,6 @@ function createOutputDirectory () {
     } else {
       resolve()
     }
-  })
-}
-
-function deleteIcon (iconPath) {
-  return new Promise((resolve) => {
-    fs.unlink(iconPath, (err) => {
-      if (err) throw err
-      // if no error, file has been deleted successfully
-      resolve()
-    })
-  })
-}
-
-function deleteDirectory (directory) {
-  return new Promise((resolve) => {
-    fs.rmdir(directory, (err) => {
-      if (err) throw err
-      resolve()
-    })
-  })
-}
-
-function deleteIcons () {
-  return new Promise((resolve) => {
-    const directory = path.resolve(config.iconsPath)
-    // read icons directory files
-    fs.readdir(directory, (err, files) => {
-      if (err) throw err
-      spinner.start('Deleting directory contents')
-      let filesToDelete = []
-      let subdirectories = []
-      files.forEach((file) => {
-        const hasSubdirectory = fs.lstatSync(path.join(directory, file)).isDirectory()
-        if (hasSubdirectory) {
-          const subdirectory = path.join(directory, file)
-          subdirectories.push(subdirectory)
-          // read subdirectory
-          fs.readdir(subdirectory, (err, files) => {
-            if (err) throw err
-            files.forEach(file => filesToDelete.push(deleteIcon(path.join(subdirectory, file))))
-          })
-        } else {
-          if (file !== 'README.md') {
-            filesToDelete.push(deleteIcon(path.join(directory, file)))
-          }
-        }
-      })
-      Promise.all(filesToDelete).then(() => {
-        const directoriesToDelete = subdirectories.map(subdirectory => deleteDirectory(subdirectory))
-        Promise.all(directoriesToDelete).then(() => {
-          spinner.succeed()
-          resolve()
-        })
-      })
-    })
   })
 }
 
@@ -183,7 +131,7 @@ function getImages (icons) {
   return new Promise((resolve) => {
     spinner.start('Fetching icon urls')
     const iconIds = icons.map(icon => icon.id).join(',')
-    figmaClient.get(`/images/${config.fileId}?ids=${iconIds}&format=svg`)
+    figmaClient.get(`/images/${config.fileId}?ids=${iconIds}&format=${config.format}`)
       .then((res) => {
         spinner.succeed()
         const images = res.data.images
@@ -200,11 +148,13 @@ function getImages (icons) {
 }
 
 function downloadImage (url, name) {
-  let nameClean = name
-  let directory = config.iconsPath
+  let nameClean = name.trim();
+  let directory = `${config.iconsPath.trim()}/`;
   const idx = name.lastIndexOf('/')
   if (idx !== -1) {
-    directory = directory + '/' + name.substring(0, idx)
+    directory = `${directory}/${name.substring(0, idx)}`;
+    directory = directory.trim();
+    name = name.toLowerCase();
     nameClean = name.substring(idx + 1)
     if (!fs.existsSync(directory)) {
       if (mkdirp.sync(directory)) {
@@ -216,7 +166,7 @@ function downloadImage (url, name) {
       }
     }
   }
-  const imagePath = path.resolve(directory, `${nameClean}.svg`)
+  const imagePath = path.resolve(directory, `${nameClean}.${config.format}`)
   const writer = fs.createWriteStream(imagePath)
 
 
@@ -237,7 +187,7 @@ function downloadImage (url, name) {
     writer.on('finish', () => {
       // console.log(`Saved ${name}.svg`, fs.statSync(imagePath).size)
       resolve({
-        name: `${name}.svg`,
+        name: `${name}.${config.format}`,
         size: fs.statSync(imagePath).size
       })
     })
@@ -281,7 +231,6 @@ function exportIcons () {
           console.log(`Api returned ${icons.length} icons\n`)
           createOutputDirectory()
           .then(() => {
-            deleteIcons().then(() => {
               spinner.start('Downloading')
               const AllIcons = icons.map(icon => downloadImage(icon.image, icon.name))
               // const AllIcons = []
@@ -289,7 +238,6 @@ function exportIcons () {
                 spinner.succeed(chalk.cyan.bold('Download Finished!\n'))
                 console.log(`${makeResultsTable(res)}\n`)
               })
-            })
           })
         })
         .catch((err) => {
