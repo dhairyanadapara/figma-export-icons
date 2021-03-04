@@ -1,6 +1,6 @@
 {
   "name": "figma-export-icons-2",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Script to generate and download icons from a figma file",
   "bin": {
     "export-icons": "cli.js"
@@ -17,7 +17,7 @@
     "figma",
     "figma-api"
   ],
-  "author": "George Tsimenis",
+  "author": "Dhairya Nadapara",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dhairyanadapara/figma-export-icons/issues"

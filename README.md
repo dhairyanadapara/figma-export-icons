@@ -1,4 +1,4 @@
-# figma-export-icons
+# figma-export-icons-2
 
 <a href="https://www.npmjs.com/package/figma-export-icons-2"><img src="https://badgen.net/npm/v/figma-export-icons-2" alt="Version"></a>
 <a href="https://www.npmjs.com/package/figma-export-icons-2"><img src="https://badgen.net/npm/dm/figma-export-icons-2" alt="Downloads"></a>
@@ -84,9 +84,10 @@ run it directly with:
 npx export-icons
 ```
 
-OR
+For running it as a cli app:
 
-run cli.js:
+1. clone the app or download zip from [repo](https://github.com/dhairyanadapara/figma-export-icons)
+2. run cli.js:
 
 ```sh
 node cli.js
