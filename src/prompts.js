@@ -30,6 +30,12 @@ const prompts = [
     name: 'iconsPath',
     message: 'Directory to download the icons to',
     initial: defaults.iconsPath
+  },
+  {
+    type: 'text',
+    name: 'format',
+    message: 'Output file format',
+    initial: defaults.format
   }
 ]
 
