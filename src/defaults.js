@@ -3,7 +3,8 @@ const defaults = {
   page: 'Identity',
   frame: 'Icons',
   iconsPath: 'assets/svg/icons',
-  format: "svg"
-}
+  format: "svg",
+  scale: 4
+};
 
-module.exports = defaults
+module.exports = defaults;
