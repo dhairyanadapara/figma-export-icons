@@ -1,187 +1,188 @@
 #!/usr/bin/env node
 
-const defaults = require('./src/defaults')
-const figma = require('./src/figma-client')
-const fs = require('fs')
-const path = require('path')
-const ora = require('ora')
-const chalk = require('chalk')
-const ui = require('cliui')({ width: 80 })
-const axios = require('axios')
-const prompts = require('prompts')
-const promptsList = require('./src/prompts')
-const mkdirp = require('mkdirp')
-const argv = require('minimist')(process.argv.slice(2))
-let config = {}
-let figmaClient
-const spinner = ora()
+const defaults = require('./src/defaults');
+const figma = require('./src/figma-client');
+const fs = require('fs');
+const path = require('path');
+const ora = require('ora');
+const chalk = require('chalk');
+const ui = require('cliui')({ width: 80 });
+const axios = require('axios');
+const prompts = require('prompts');
+const promptsList = require('./src/prompts');
+const mkdirp = require('mkdirp');
+const argv = require('minimist')(process.argv.slice(2));
+let config = {};
+let figmaClient;
+const spinner = ora();
 
-function deleteConfig () {
-  const configFile = path.resolve(defaults.configFileName)
+function deleteConfig() {
+  const configFile = path.resolve(defaults.configFileName);
   if (fs.existsSync(configFile)) {
-    fs.unlinkSync(configFile)
-    console.log(chalk.cyan.bold('Deleted previous config'))
+    fs.unlinkSync(configFile);
+    console.log(chalk.cyan.bold('Deleted previous config'));
   }
 }
 
-function updateGitIgnore () {
-  const ignorePath = '.gitignore'
-  const configPath = argv.config || defaults.configFileName
-  const ignoreCompletePath = path.resolve(ignorePath)
+function updateGitIgnore() {
+  const ignorePath = '.gitignore';
+  const configPath = argv.config || defaults.configFileName;
+  const ignoreCompletePath = path.resolve(ignorePath);
   if (fs.existsSync(configPath)) {
-    const ignoreContent = `\n#figma-export-icons\n${configPath}`
+    const ignoreContent = `\n#figma-export-icons\n${configPath}`;
     const ignore = fs.existsSync(ignoreCompletePath)
       ? fs.readFileSync(ignoreCompletePath, 'utf-8')
-      : ''
-    if(!ignore.includes(ignoreContent)) {
-      fs.writeFileSync(ignoreCompletePath, ignore + ignoreContent)
-      console.log(`Updated ${ignorePath} : ${ignoreContent}`)
+      : '';
+    if (!ignore.includes(ignoreContent)) {
+      fs.writeFileSync(ignoreCompletePath, ignore + ignoreContent);
+      console.log(`Updated ${ignorePath} : ${ignoreContent}`);
     }
   }
 }
 
-function getConfig () {
+function getConfig() {
   return new Promise((resolve) => {
-    const configFile = path.resolve(argv.config || defaults.configFileName)
+    const configFile = path.resolve(argv.config || defaults.configFileName);
     if (fs.existsSync(configFile)) {
-      config = JSON.parse(fs.readFileSync(configFile, 'utf-8'))
+      config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
       delete config.page;
       delete config.frame;
       delete config.format;
-      const missingConfig = promptsList.filter((q) => !config[q.name])
-      if (missingConfig.length > 0) getPromptData(missingConfig).then(() => resolve())
-      else resolve()
+      delete config.scale;
+      const missingConfig = promptsList.filter((q) => !config[q.name]);
+      if (missingConfig.length > 0) getPromptData(missingConfig).then(() => resolve());
+      else resolve();
     } else {
-      getPromptData().then(() => resolve())
+      getPromptData().then(() => resolve());
     }
-  })
+  });
 }
 
-async function getPromptData ( list = promptsList ) {
+async function getPromptData(list = promptsList) {
   const onCancel = prompt => {
-    process.exit(1)
-  }
-  const response = await prompts(list, { onCancel })
-  config = Object.assign(config, response)
-  fs.writeFileSync('icons-config.json', JSON.stringify(config, null, 2))
+    process.exit(1);
+  };
+  const response = await prompts(list, { onCancel });
+  config = Object.assign(config, response);
+  fs.writeFileSync('icons-config.json', JSON.stringify(config, null, 2));
 }
 
-function createOutputDirectory () {
+function createOutputDirectory() {
   return new Promise((resolve) => {
-    const directory = path.resolve(config.iconsPath)
+    const directory = path.resolve(config.iconsPath, config.format);
     if (!fs.existsSync(directory)) {
-      console.log(`Directory ${config.iconsPath} does not exist`)
+      console.log(`Directory ${config.iconsPath} does not exist`);
       if (mkdirp.sync(directory)) {
-        console.log(`Created directory ${config.iconsPath}`)
-        resolve()
+        console.log(`Created directory ${config.iconsPath}`);
+        resolve();
       }
     } else {
-      resolve()
+      resolve();
     }
-  })
+  });
 }
 
-function findDuplicates (propertyName, arr) {
+function findDuplicates(propertyName, arr) {
   return arr.reduce((acc, current) => {
-    const x = acc.find(item => item[propertyName] === current[propertyName])
+    const x = acc.find(item => item[propertyName] === current[propertyName]);
     if (x) {
-      spinner.fail(chalk.bgRed.bold(`Duplicate icon name: ${x[propertyName]}. Please fix figma file`))
-      current[propertyName] = current[propertyName] + '-duplicate-name'
+      spinner.fail(chalk.bgRed.bold(`Duplicate icon name: ${x[propertyName]}. Please fix figma file`));
+      current[propertyName] = current[propertyName] + '-duplicate-name';
     }
-    return acc.concat([current])
-  }, [])
+    return acc.concat([current]);
+  }, []);
 }
 
-function getFigmaFile () {
+function getFigmaFile() {
   return new Promise((resolve) => {
-    spinner.start('Fetching Figma file (this might take a while depending on the figma file size)')
+    spinner.start('Fetching Figma file (this might take a while depending on the figma file size)');
     figmaClient.get(`/files/${config.fileId}`)
       .then((res) => {
-        const endTime = new Date().getTime()
-        spinner.succeed()
-        console.log(chalk.cyan.bold(`Finished in ${(endTime - res.config.startTime) / 1000}s\n`))
-        const page = res.data.document.children.find(c => c.name === config.page)
+        const endTime = new Date().getTime();
+        spinner.succeed();
+        console.log(chalk.cyan.bold(`Finished in ${(endTime - res.config.startTime) / 1000}s\n`));
+        const page = res.data.document.children.find(c => c.name === config.page);
         if (!page) {
-          console.log(chalk.red.bold('Cannot find Icons Page, check your settings'))
-          return
+          console.log(chalk.red.bold('Cannot find Icons Page, check your settings'));
+          return;
         }
         if (!page.children.find(c => c.name === config.frame)) {
-          console.log(chalk.red.bold('Cannot find Icons Frame in this Page, check your settings'))
-          return
+          console.log(chalk.red.bold('Cannot find Icons Frame in this Page, check your settings'));
+          return;
         }
         let icons = page.children.find(c => c.name === config.frame).children.map((icon) => {
-          return {id: icon.id, name: icon.name}
-        })
-        icons = findDuplicates('name', icons)
-        resolve(icons)
+          return { id: icon.id, name: icon.name };
+        });
+        icons = findDuplicates('name', icons);
+        resolve(icons);
       })
       .catch((err) => {
-        spinner.fail()
+        spinner.fail();
         if (err.response) {
-          console.log(chalk.red.bold(`Cannot get Figma file: ${err.response.data.status} ${err.response.data.err}`))
+          console.log(chalk.red.bold(`Cannot get Figma file: ${err.response.data.status} ${err.response.data.err}`));
         } else {
-          console.log(err)
+          console.log(err);
         }
-        process.exit(1)
-      })
-  })
+        process.exit(1);
+      });
+  });
 }
 
-function getImages (icons) {
+function getImages(icons) {
   return new Promise((resolve) => {
-    spinner.start('Fetching icon urls')
-    const iconIds = icons.map(icon => icon.id).join(',')
-    figmaClient.get(`/images/${config.fileId}?ids=${iconIds}&format=${config.format}`)
+    spinner.start('Fetching icon urls');
+    const iconIds = icons.map(icon => icon.id).join(',');
+    figmaClient.get(`/images/${config.fileId}?ids=${iconIds}&format=${config.format}&scale=${config.scale}`)
       .then((res) => {
-        spinner.succeed()
-        const images = res.data.images
+        spinner.succeed();
+        const images = res.data.images;
         icons.forEach((icon) => {
-          icon.image = images[icon.id]
-        })
-        resolve(icons)
+          icon.image = images[icon.id];
+        });
+        resolve(icons);
       })
       .catch((err) => {
-        console.log('Cannot get icons: ', err)
-        process.exit(1)
-      })
-  })
+        console.log('Cannot get icons: ', err);
+        process.exit(1);
+      });
+  });
 }
 
-function downloadImage (url, name) {
+function downloadImage(url, name) {
   let nameClean = name.trim();
-  let directory = `${config.iconsPath.trim()}/`;
-  const idx = name.lastIndexOf('/')
+  let directory = path.resolve(config.iconsPath, config.format);
+  const idx = name.lastIndexOf('/');
   if (idx !== -1) {
-    directory = `${directory}/${name.substring(0, idx)}`;
-    directory = directory.trim();
+    directory = path.resolve(directory, name.substring(0, idx).replace(' ', ''));
     name = name.toLowerCase();
-    nameClean = name.substring(idx + 1)
+    nameClean = name.substring(idx + 1).replace(' ', '');
     if (!fs.existsSync(directory)) {
       if (mkdirp.sync(directory)) {
-        console.log(`\nCreated sub directory ${directory}`)
-        iconPath = directory
+        console.log(`\nCreated sub directory ${directory}`);
+        iconPath = directory;
       } else {
-        console.log('Cannot create directories')
-        process.exit(1)
+        console.log('Cannot create directories');
+        process.exit(1);
       }
     }
   }
-  const imagePath = path.resolve(directory, `${nameClean}.${config.format}`)
-  const writer = fs.createWriteStream(imagePath)
+  const imagePath = path.resolve(directory, `${nameClean}.${config.format}`);
+  console.log(imagePath);
+  const writer = fs.createWriteStream(imagePath);
 
 
-  axios.get(url, {responseType: 'stream'})
+  axios.get(url, { responseType: 'stream' })
     .then((res) => {
-      res.data.pipe(writer)
+      res.data.pipe(writer);
     })
     .catch((err) => {
-      spinner.fail()
-      console.log(name)
-      console.log(err.message)
-      console.log(err.config.url)
-      console.log(chalk.red.bold('Something went wrong fetching the image from S3, please try again'),)
-      process.exit(1)
-    })
+      spinner.fail();
+      console.log(name);
+      console.log(err.message);
+      console.log(err.config.url);
+      console.log(chalk.red.bold('Something went wrong fetching the image from S3, please try again'),);
+      process.exit(1);
+    });
 
   return new Promise((resolve, reject) => {
     writer.on('finish', () => {
@@ -189,25 +190,25 @@ function downloadImage (url, name) {
       resolve({
         name: `${name}.${config.format}`,
         size: fs.statSync(imagePath).size
-      })
-    })
+      });
+    });
     writer.on('error', (err) => {
-      console.log('error writting file', err)
-      reject(err)
-    })
-  })
+      console.log('error writting file', err);
+      reject(err);
+    });
+  });
 
 }
 
-function makeRow (a, b) {
-  return `  ${a}\t    ${b}\t`
+function makeRow(a, b) {
+  return `  ${a}\t    ${b}\t`;
 }
 
-function formatSize (size) {
-  return (size / 1024).toFixed(2) + ' KiB'
+function formatSize(size) {
+  return (size / 1024).toFixed(2) + ' KiB';
 }
 
-function makeResultsTable (results) {
+function makeResultsTable(results) {
   ui.div(
     makeRow(
       chalk.cyan.bold(`File`),
@@ -219,42 +220,42 @@ function makeResultsTable (results) {
         : chalk.green(asset.name),
       formatSize(asset.size)
     )).join(`\n`)
-  )
-  return ui.toString()
+  );
+  return ui.toString();
 }
 
-function exportIcons () {
+function exportIcons() {
   getFigmaFile()
     .then((res) => {
       getImages(res)
         .then((icons) => {
-          console.log(`Api returned ${icons.length} icons\n`)
+          console.log(`Api returned ${icons.length} icons\n`);
           createOutputDirectory()
-          .then(() => {
-              spinner.start('Downloading')
-              const AllIcons = icons.map(icon => downloadImage(icon.image, icon.name))
+            .then(() => {
+              spinner.start('Downloading');
+              const AllIcons = icons.map(icon => downloadImage(icon.image, icon.name));
               // const AllIcons = []
               Promise.all(AllIcons).then((res) => {
-                spinner.succeed(chalk.cyan.bold('Download Finished!\n'))
-                console.log(`${makeResultsTable(res)}\n`)
-              })
-          })
+                spinner.succeed(chalk.cyan.bold('Download Finished!\n'));
+                console.log(`${makeResultsTable(res)}\n`);
+              });
+            });
         })
         .catch((err) => {
-          console.log(chalk.red(err))
-        })
-  })
+          console.log(chalk.red(err));
+        });
+    });
 }
 
-function run () {
-  updateGitIgnore()
+function run() {
+  updateGitIgnore();
   if (argv.c) {
-    deleteConfig()
+    deleteConfig();
   }
   getConfig().then(() => {
-    figmaClient = figma(config.figmaPersonalToken)
-    exportIcons()
-  })
+    figmaClient = figma(config.figmaPersonalToken);
+    exportIcons();
+  });
 }
 
-run()
+run();

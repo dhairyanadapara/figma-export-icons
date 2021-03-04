@@ -1,4 +1,4 @@
-const defaults = require('./defaults')
+const defaults = require('./defaults');
 
 const prompts = [
   {
@@ -36,7 +36,13 @@ const prompts = [
     name: 'format',
     message: 'Output file format',
     initial: defaults.format
+  },
+  {
+    type: 'number',
+    name: 'scale',
+    message: 'Image scale for png, jpg and pdf',
+    initial: defaults.scale
   }
-]
+];
 
-module.exports = prompts
+module.exports = prompts;

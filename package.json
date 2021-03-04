@@ -1,6 +1,6 @@
 {
-  "name": "figma-export-icons",
-  "version": "1.3.1",
+  "name": "figma-export-icons-2",
+  "version": "1.3.2",
   "description": "Script to generate and download icons from a figma file",
   "bin": {
     "export-icons": "cli.js"
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tsimenis/figma-export-icons.git"
+    "url": "git+https://github.com/dhairyanadapara/figma-export-icons.git"
   },
   "keywords": [
     "cli",
@@ -20,9 +20,9 @@
   "author": "George Tsimenis",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tsimenis/figma-export-icons/issues"
+    "url": "https://github.com/dhairyanadapara/figma-export-icons/issues"
   },
-  "homepage": "https://github.com/tsimenis/figma-export-icons#readme",
+  "homepage": "https://github.com/dhairyanadapara/figma-export-icons#readme",
   "dependencies": {
     "axios": "^0.21.1",
     "chalk": "^2.4.2",
