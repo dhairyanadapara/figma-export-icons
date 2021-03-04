@@ -167,7 +167,6 @@ function downloadImage(url, name) {
     }
   }
   const imagePath = path.resolve(directory, `${nameClean}.${config.format}`);
-  console.log(imagePath);
   const writer = fs.createWriteStream(imagePath);
 
 
