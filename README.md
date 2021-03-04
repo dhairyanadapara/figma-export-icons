@@ -1,5 +1,8 @@
 # figma-export-icons
 
+<a href="https://www.npmjs.com/package/figma-export-icons-2"><img src="https://badgen.net/npm/v/figma-export-icons-2" alt="Version"></a>
+<a href="https://www.npmjs.com/package/figma-export-icons-2"><img src="https://badgen.net/npm/dm/figma-export-icons-2" alt="Downloads"></a>
+
 > Command line script to export and download icons from a Figma file using the Figma REST api.
 
 > This cli application is extended version of [figma-export-icons](https://github.com/tsimenis/figma-export-icons). I have made few changes to download the icons in multiple format.
@@ -18,7 +21,8 @@ example config file:
     "page": "Identity",
     "frame": "Icons",
     "iconsPath": "assets/svg/icons",
-    "format": "svg"
+    "format": "svg",
+    "scale": 4
 }
 ```
 
@@ -32,6 +36,7 @@ example config file:
 -   Running the script with `-c` will clear the config and run the wizard again
 -   You can use a custom path to your configuration file with `--config=path/to/config.json`
 -   You can pass the output format of image. It supports jpg, png, svg, and pdf.
+-   For png, jpg and pdf it supports scale property.
 
 ## Installation
 

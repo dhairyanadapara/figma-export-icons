@@ -1,0 +1,8 @@
+assets
+.eslintrc.js
+.babelrc
+webpack.config.js
+.pytest_cache
+icons-config.json
+.idea
+.vscode
